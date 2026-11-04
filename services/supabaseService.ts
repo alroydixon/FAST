@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase';
 import { AthleteProfile, TrainingSession, WellnessEntry, DailyLoadCalculation } from '../types/athlete';
 
 export interface SupabaseSyncResult {
@@ -131,7 +131,7 @@ export async function fetchAthleteDashboardData(athleteId: string): Promise<{
     supabase.from('wellness_logs').select('*').eq('athlete_id', athleteId).order('date', { ascending: false })
   ]);
 
-  const sessions: TrainingSession[] = (sessionsRes.data || []).map((row) => ({
+  const sessions: TrainingSession[] = (sessionsRes.data || []).map((row: any) => ({
     id: row.id,
     athleteId: row.athlete_id,
     date: row.date,
@@ -147,7 +147,7 @@ export async function fetchAthleteDashboardData(athleteId: string): Promise<{
     notes: row.notes,
   }));
 
-  const wellness: WellnessEntry[] = (wellnessRes.data || []).map((row) => ({
+  const wellness: WellnessEntry[] = (wellnessRes.data || []).map((row: any) => ({
     id: row.id,
     athleteId: row.athlete_id,
     date: row.date,

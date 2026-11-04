@@ -25,7 +25,7 @@ export interface LocalCoachingDirectiveResponse {
 export async function requestPersonalizedCoaching(
   athlete: AthleteProfile,
   latestLoad?: DailyLoadCalculation,
-  latestWellness?: WellnessEntry,
+  latestWellness?: WellnessEntry[], // Updated to accept the array from your state cleanly
   latestHealth?: HealthMetricDaily,
   recentSessions: TrainingSession[] = [],
   userQuestion?: string
@@ -36,9 +36,12 @@ export async function requestPersonalizedCoaching(
   const primaryTip: CoachingTip | undefined = ruleTips[0];
   
   const acwr = latestLoad?.acwr ?? 1.1;
-  const readiness = latestWellness?.readinessScore ?? 80;
-  const soreness = latestWellness?.soreness ?? 5;
-  const sleep = latestWellness?.sleepHours ?? 8.0;
+  
+  // Extract the single latest item safely from the array for evaluation
+  const activeWellness = latestWellness && latestWellness.length > 0 ? latestWellness[0] : undefined;
+  const readiness = activeWellness?.readinessScore ?? 80;
+  const soreness = activeWellness?.soreness ?? 5;
+  const sleep = activeWellness?.sleepHours ?? 8.0;
 
   // 2. Classify training gate verdict based on absolute baseline variations
   let verdict: 'GREEN_LIGHT' | 'AMBER_MODULATION' | 'RED_DELOAD' = 'GREEN_LIGHT';
@@ -53,14 +56,14 @@ export async function requestPersonalizedCoaching(
   if (verdict === 'RED_DELOAD') {
     recommendation = 'Compulsory offline active recovery block. Zone 1 active recovery ride/flush, extensive mobility, or hydrotherapy flushes (< 45 min). Avoid rapid accelerations.';
   } else if (verdict === 'AMBER_MODULATION') {
-    recommendation = 'Modified accumulation block. Cap physical session volume at 70% of peak cycle volume. Focus on movement mechanics and extended warm-ups.';
+    recommendation = 'Modified modulation session. Cap overall volume at 70% of peak cycle volume. Focus on movement mechanics and extended warm-ups.';
   }
 
   // 4. Construct high-fidelity, actionable checklists
   const directives = [
-    primaryTip?.actionableStep || 'Maintain scheduled mesocycle loading profile. Target optimal baseline electrolyte balance.',
-    latestWellness?.sorenessAreas && latestWellness.sorenessAreas.length > 0
-      ? `Dedicate 10-15 minutes for explicit recovery release targeting localized clusters: ${latestWellness.sorenessAreas.join(', ')}.`
+    primaryTip?.actionableStep || 'Maintain scheduled training volume. Target optimal baseline electrolyte balance.',
+    activeWellness?.sorenessAreas && activeWellness.sorenessAreas.length > 0
+      ? `Allocate 10-15 minutes for explicit recovery release targeting localized clusters: ${activeWellness.sorenessAreas.join(', ')}.`
       : 'Execute standard 15-minute dynamic neuromuscular activation protocol before loaded speed/power movements.',
     'Log your rating of perceived exertion (Borg CR-10 sRPE) within 30 minutes of session conclusion for precise acute load metrics.'
   ];

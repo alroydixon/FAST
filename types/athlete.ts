@@ -105,3 +105,16 @@ export interface CoachingTip {
   actionableStep: string;
   metricsCited: string[];
 }
+
+export interface HealthMetricDaily {
+  id: string;
+  athleteId: string;
+  date: string;
+  steps: number;
+  activeCalories: number;
+  restingHR: number;
+  hrvAverageMs: number;
+  sleepHoursTotal: number;
+  sourceDevice: string;
+  lastSyncedAt: string;
+}
