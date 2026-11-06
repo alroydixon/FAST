@@ -220,13 +220,13 @@ export default function MainDashboard() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 sm:p-8 space-y-6">
       {/* Universal Structural App Navigation Header */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center border border-blue-400 shadow-md">
             <Activity className="w-5 h-5 text-white stroke-[2.5]" />
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight text-white uppercase">
-              ApexTrack <span className="text-blue-400 font-medium">Performance</span>
+              First At Sports <span className="text-blue-400 font-medium">Training Performance</span>
             </h1>
             <p className="text-xs text-slate-400 font-mono">Athlete Management System (AMS) &bull; Standalone Build</p>
           </div>

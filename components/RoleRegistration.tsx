@@ -99,10 +99,10 @@ export default function RoleRegistration({ onOnboardingComplete }: RegistrationP
     }
   };
   return (
-    <div className="w-full max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="w-full max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
       <div className="text-center space-y-1.5 border-b border-slate-800 pb-5">
         <h2 className="text-xl font-black uppercase text-white tracking-tight flex items-center justify-center gap-2">
-          <UserPlus className="w-5 h-5 text-blue-500" /> ApexTrack Role Registration
+          <UserPlus className="w-5 h-5 text-blue-500" /> First At Sports Registration
         </h2>
         <p className="text-xs text-slate-400">Initialize a new credential profile cluster inside the management platform matrix.</p>
       </div>
