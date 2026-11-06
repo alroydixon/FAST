@@ -118,3 +118,39 @@ export interface HealthMetricDaily {
   sourceDevice: string;
   lastSyncedAt: string;
 }
+export type StaffRole = 'coach' | 'medical_staff';
+export type ClearanceStatus = 'FULL_CLEARANCE' | 'MODIFIED_RESTRICTION' | 'COMPULSORY_REMOVAL';
+
+export interface StaffProfile {
+  id: string;
+  name: string;
+  email: string;
+  roleType: StaffRole;
+  specialization: string;
+  licenseNumber?: string;
+}
+
+export interface MedicalRecord {
+  id: string;
+  athleteId: string;
+  clinicianId: string;
+  date: string;
+  encounterType: 'Initial Assessment' | 'Follow-up Consultation' | 'Emergency Triage' | 'Pre-Participation Screen';
+  primaryComplaint: string;
+  objectiveFindings: string;
+  assessmentDiagnosis: string;
+  treatmentPlan: string;
+  clearanceStatus: ClearanceStatus;
+  restrictionNotes?: string;
+}
+
+export interface InjuryLog {
+  id: string;
+  athleteId: string;
+  injuryDate: string;
+  anatomicalSite: string;
+  injuryType: string;
+  severity: 'Mild' | 'Moderate' | 'Severe';
+  estimatedDaysOut?: number;
+  status: 'Acute Recovery' | 'Functional Rehabilitation' | 'Return-to-Play Protocol' | 'Fully Resolved';
+}

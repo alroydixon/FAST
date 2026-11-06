@@ -168,3 +168,62 @@ export async function fetchAthleteDashboardData(athleteId: string): Promise<{
 
   return { sessions, wellness };
 }
+import { StaffProfile, MedicalRecord, InjuryLog } from '../types/athlete';
+
+/**
+ * Commits a fresh coach or clinical medical officer profile into staff tables.
+ */
+export async function pushStaffProfileToSupabase(staff: StaffProfile): Promise<any> {
+  const { data, error } = await supabase
+    .from('staff_profiles')
+    .upsert({
+      id: staff.id,
+      name: staff.name,
+      email: staff.email,
+      role_type: staff.roleType,
+      specialization: staff.specialization,
+      license_number: staff.licenseNumber || null
+    }, { onConflict: 'id' });
+  return { success: !error, message: error ? error.message : 'Staff profile registered!' };
+}
+
+/**
+ * Commits an encrypted-ready clinical soap encounter row transaction.
+ */
+export async function pushMedicalRecordToSupabase(record: MedicalRecord): Promise<any> {
+  const { error } = await supabase
+    .from('medical_records')
+    .insert({
+      id: record.id,
+      athlete_id: record.athleteId,
+      clinician_id: record.clinicianId,
+      date: record.date,
+      encounter_type: record.encounterType,
+      primary_complaint: record.primaryComplaint,
+      objective_findings: record.objectiveFindings,
+      assessment_diagnosis: record.assessmentDiagnosis,
+      treatment_plan: record.treatmentPlan,
+      clearance_status: record.clearanceStatus,
+      restriction_notes: record.restrictionNotes || null
+    });
+  return { success: !error, message: error ? error.message : 'EMR row added successfully!' };
+}
+
+/**
+ * Commits or alters an ongoing rehabilitation timeline entry.
+ */
+export async function pushInjuryLogToSupabase(log: InjuryLog): Promise<any> {
+  const { error } = await supabase
+    .from('injury_logs')
+    .upsert({
+      id: log.id,
+      athlete_id: log.athleteId,
+      injury_date: log.injuryDate,
+      anatomical_site: log.anatomicalSite,
+      injury_type: log.injuryType,
+      severity: log.severity,
+      estimated_days_out: log.estimatedDaysOut || null,
+      status: log.status
+    }, { onConflict: 'id' });
+  return { success: !error, message: error ? error.message : 'Injury timeline track saved!' };
+}
