@@ -154,3 +154,14 @@ export interface InjuryLog {
   estimatedDaysOut?: number;
   status: 'Acute Recovery' | 'Functional Rehabilitation' | 'Return-to-Play Protocol' | 'Fully Resolved';
 }
+export interface TrackPerformanceRecord {
+  id: string;
+  athleteId: string;
+  date: string;
+  eventType: '60m' | '100m' | '200m' | '400m';
+  sessionType: 'Competition' | 'Training Trial';
+  timeSeconds: number;
+  velocityMs?: number;
+  windReading?: number;
+  venueNotes?: string;
+}

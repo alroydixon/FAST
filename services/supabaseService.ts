@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { AthleteProfile, TrainingSession, WellnessEntry, DailyLoadCalculation } from '../types/athlete';
+import { AthleteProfile, TrainingSession, WellnessEntry, StaffProfile, MedicalRecord, InjuryLog, TrackPerformanceRecord } from '../types/athlete';
 
 export interface SupabaseSyncResult {
   success: boolean;
@@ -8,12 +8,8 @@ export interface SupabaseSyncResult {
   errorDetails?: string;
 }
 
-/**
- * Pushes multiple athlete profiles to the cloud with automatic duplicate overrides (upsert).
- */
 export async function pushAthletesToSupabase(athletes: AthleteProfile[]): Promise<SupabaseSyncResult> {
-  if (athletes.length === 0) return { success: true, message: 'No athlete records to sync.', rowsCount: 0 };
-
+  if (athletes.length === 0) return { success: true, message: 'No records.', rowsCount: 0 };
   const dbRows = athletes.map((a) => ({
     id: a.id,
     name: a.name,
@@ -36,24 +32,12 @@ export async function pushAthletesToSupabase(athletes: AthleteProfile[]): Promis
     date_of_birth: a.dateOfBirth || null,
     updated_at: new Date().toISOString(),
   }));
-
-  const { error } = await supabase
-    .from('athletes')
-    .upsert(dbRows, { onConflict: 'id' });
-
-  if (error) {
-    return { success: false, message: 'Failed to sync athletes to database.', errorDetails: error.message };
-  }
-
-  return { success: true, message: `Synchronized ${dbRows.length} athletes successfully!`, rowsCount: dbRows.length };
+  const { error } = await supabase.from('athletes').upsert(dbRows, { onConflict: 'id' });
+  return { success: !error, message: error ? error.message : 'Athletes synced.', rowsCount: dbRows.length };
 }
 
-/**
- * Syncs training logs to database. Accumulates sRPE loads seamlessly.
- */
 export async function pushTrainingSessionsToSupabase(sessions: TrainingSession[]): Promise<SupabaseSyncResult> {
-  if (sessions.length === 0) return { success: true, message: 'No training sessions to sync.', rowsCount: 0 };
-
+  if (sessions.length === 0) return { success: true, message: 'No records.', rowsCount: 0 };
   const dbRows = sessions.map((s) => ({
     id: s.id,
     athlete_id: s.athleteId,
@@ -70,24 +54,12 @@ export async function pushTrainingSessionsToSupabase(sessions: TrainingSession[]
     notes: s.notes || null,
     updated_at: new Date().toISOString(),
   }));
-
-  const { error } = await supabase
-    .from('training_sessions')
-    .upsert(dbRows, { onConflict: 'id' });
-
-  if (error) {
-    return { success: false, message: 'Failed to sync training sessions.', errorDetails: error.message };
-  }
-
-  return { success: true, message: `Synchronized ${dbRows.length} sessions successfully!`, rowsCount: dbRows.length };
+  const { error } = await supabase.from('training_sessions').upsert(dbRows, { onConflict: 'id' });
+  return { success: !error, message: error ? error.message : 'Sessions synced.' };
 }
 
-/**
- * Pushes psychometric wellness entries to database. Clears conflict overhead natively.
- */
 export async function pushWellnessToSupabase(wellness: WellnessEntry[]): Promise<SupabaseSyncResult> {
-  if (wellness.length === 0) return { success: true, message: 'No wellness items to sync.', rowsCount: 0 };
-
+  if (wellness.length === 0) return { success: true, message: 'No records.', rowsCount: 0 };
   const dbRows = wellness.map((w) => ({
     id: w.id,
     athlete_id: w.athleteId,
@@ -106,124 +78,63 @@ export async function pushWellnessToSupabase(wellness: WellnessEntry[]): Promise
     status: w.status,
     notes: w.notes || null,
   }));
-
-  const { error } = await supabase
-    .from('wellness_logs')
-    .upsert(dbRows, { onConflict: 'id' });
-
-  if (error) {
-    return { success: false, message: 'Failed to sync daily wellness logs.', errorDetails: error.message };
-  }
-
-  return { success: true, message: `Synchronized ${dbRows.length} wellness entries successfully!`, rowsCount: dbRows.length };
+  const { error } = await supabase.from('wellness_logs').upsert(dbRows, { onConflict: 'id' });
+  return { success: !error, message: error ? error.message : 'Wellness entries synced.' };
 }
 
-/**
- * Fetches an isolated athlete's historical dashboard data completely offline-ready.
- */
-export async function fetchAthleteDashboardData(athleteId: string): Promise<{
-  sessions: TrainingSession[];
-  wellness: WellnessEntry[];
-}> {
-  // Query both tables concurrently to maximize system execution speeds
+export async function fetchAthleteDashboardData(athleteId: string): Promise<{ sessions: TrainingSession[]; wellness: WellnessEntry[] }> {
   const [sessionsRes, wellnessRes] = await Promise.all([
     supabase.from('training_sessions').select('*').eq('athlete_id', athleteId).order('date', { ascending: false }),
     supabase.from('wellness_logs').select('*').eq('athlete_id', athleteId).order('date', { ascending: false })
   ]);
-
-  const sessions: TrainingSession[] = (sessionsRes.data || []).map((row: any) => ({
-    id: row.id,
-    athleteId: row.athlete_id,
-    date: row.date,
-    title: row.title,
-    type: row.type,
-    durationMinutes: Number(row.duration_minutes),
-    rpe: row.rpe,
-    sessionLoad: Number(row.session_load),
-    avgHR: row.avg_hr,
-    maxHR: row.max_hr,
-    trimp: row.trimp,
-    distanceKm: row.distance_km,
-    notes: row.notes,
-  }));
-
-  const wellness: WellnessEntry[] = (wellnessRes.data || []).map((row: any) => ({
-    id: row.id,
-    athleteId: row.athlete_id,
-    date: row.date,
-    sleepHours: Number(row.sleep_hours),
-    sleepQuality: row.sleep_quality,
-    soreness: row.soreness,
-    sorenessAreas: row.soreness_areas || [],
-    fatigue: row.fatigue,
-    stress: row.stress,
-    mood: row.mood,
-    morningRHR: row.morning_rhr,
-    morningHRV: row.morning_hrv,
-    hydrationLitres: row.hydration_litres,
-    notes: row.notes,
-    readinessScore: row.readiness_score,
-    status: row.status as any,
-  }));
-
-  return { sessions, wellness };
+  return {
+    sessions: (sessionsRes.data || []).map((row: any) => ({
+      id: row.id, athleteId: row.athlete_id, date: row.date, title: row.title, type: row.type, durationMinutes: Number(row.duration_minutes), rpe: row.rpe, sessionLoad: Number(row.session_load), avgHR: row.avg_hr, maxHR: row.max_hr, trimp: row.trimp, distanceKm: row.distance_km, notes: row.notes,
+    })),
+    wellness: (wellnessRes.data || []).map((row: any) => ({
+      id: row.id, athleteId: row.athlete_id, date: row.date, sleepHours: Number(row.sleep_hours), sleepQuality: row.sleep_quality, soreness: row.soreness, sorenessAreas: row.soreness_areas || [], fatigue: row.fatigue, stress: row.stress, mood: row.mood, morningRHR: row.morning_rhr, morningHRV: row.morning_hrv, hydrationLitres: row.hydration_litres, notes: row.notes, readinessScore: row.readiness_score, status: row.status as any,
+    }))
+  };
 }
-import { StaffProfile, MedicalRecord, InjuryLog } from '../types/athlete';
 
-/**
- * Commits a fresh coach or clinical medical officer profile into staff tables.
- */
 export async function pushStaffProfileToSupabase(staff: StaffProfile): Promise<any> {
-  const { data, error } = await supabase
-    .from('staff_profiles')
-    .upsert({
-      id: staff.id,
-      name: staff.name,
-      email: staff.email,
-      role_type: staff.roleType,
-      specialization: staff.specialization,
-      license_number: staff.licenseNumber || null
-    }, { onConflict: 'id' });
+  const { error } = await supabase.from('staff_profiles').upsert({
+    id: staff.id, name: staff.name, email: staff.email, role_type: staff.roleType, specialization: staff.specialization, license_number: staff.licenseNumber || null
+  }, { onConflict: 'id' });
   return { success: !error, message: error ? error.message : 'Staff profile registered!' };
 }
 
-/**
- * Commits an encrypted-ready clinical soap encounter row transaction.
- */
 export async function pushMedicalRecordToSupabase(record: MedicalRecord): Promise<any> {
-  const { error } = await supabase
-    .from('medical_records')
-    .insert({
-      id: record.id,
-      athlete_id: record.athleteId,
-      clinician_id: record.clinicianId,
-      date: record.date,
-      encounter_type: record.encounterType,
-      primary_complaint: record.primaryComplaint,
-      objective_findings: record.objectiveFindings,
-      assessment_diagnosis: record.assessmentDiagnosis,
-      treatment_plan: record.treatmentPlan,
-      clearance_status: record.clearanceStatus,
-      restriction_notes: record.restrictionNotes || null
-    });
-  return { success: !error, message: error ? error.message : 'EMR row added successfully!' };
+  const { error } = await supabase.from('medical_records').insert({
+    id: record.id, athlete_id: record.athleteId, clinician_id: record.clinicianId, date: record.date, encounter_type: record.encounterType, primary_complaint: record.primaryComplaint, objective_findings: record.objectiveFindings, assessment_diagnosis: record.assessmentDiagnosis, treatment_plan: record.treatmentPlan, clearance_status: record.clearanceStatus, restriction_notes: record.restrictionNotes || null
+  });
+  return { success: !error, message: error ? error.message : 'EMR added!' };
 }
 
-/**
- * Commits or alters an ongoing rehabilitation timeline entry.
- */
 export async function pushInjuryLogToSupabase(log: InjuryLog): Promise<any> {
-  const { error } = await supabase
-    .from('injury_logs')
-    .upsert({
-      id: log.id,
-      athlete_id: log.athleteId,
-      injury_date: log.injuryDate,
-      anatomical_site: log.anatomicalSite,
-      injury_type: log.injuryType,
-      severity: log.severity,
-      estimated_days_out: log.estimatedDaysOut || null,
-      status: log.status
-    }, { onConflict: 'id' });
-  return { success: !error, message: error ? error.message : 'Injury timeline track saved!' };
+  const { error } = await supabase.from('injury_logs').upsert({
+    id: log.id, athlete_id: log.athleteId, injury_date: log.injuryDate, anatomical_site: log.anatomicalSite, injury_type: log.injuryType, severity: log.severity, estimated_days_out: log.estimatedDaysOut || null, status: log.status
+  }, { onConflict: 'id' });
+  return { success: !error, message: error ? error.message : 'Injury logged!' };
+}
+
+export async function pushTrackPerformance(record: TrackPerformanceRecord): Promise<any> {
+  const { error } = await supabase.from('track_performances').insert({
+    id: record.id, athlete_id: record.athleteId, date: record.date, event_type: record.eventType, session_type: record.sessionType, time_seconds: record.timeSeconds, velocity_ms: record.velocityMs || null, wind_reading: record.windReading || null, venue_notes: record.venueNotes || null
+  });
+  return { success: !error, message: error ? error.message : 'Track mark added!' };
+}
+
+export async function fetchRosterAthletes(coachId: string): Promise<AthleteProfile[]> {
+  const { data } = await supabase.from('athletes').select('*').eq('coach_id', coachId);
+  return (data || []).map((row: any) => ({
+    id: row.id, name: row.name, sport: row.sport, sportingCode: row.sporting_code, trackDiscipline: row.track_discipline, age: row.age, gender: row.gender, weightKg: Number(row.weight_kg), heightCm: Number(row.height_cm), restingHR: row.resting_hr, maxHR: row.max_hr, currentPhase: row.current_phase, coachId: row.coach_id
+  }));
+}
+
+export async function fetchTrackPerformances(athleteId: string): Promise<TrackPerformanceRecord[]> {
+  const { data } = await supabase.from('track_performances').select('*').eq('athlete_id', athleteId).order('date', { ascending: true });
+  return (data || []).map((row: any) => ({
+    id: row.id, athleteId: row.athlete_id, date: row.date, eventType: row.event_type, sessionType: row.session_type, timeSeconds: Number(row.time_seconds), velocityMs: row.velocity_ms, windReading: row.wind_reading, venueNotes: row.venue_notes
+  }));
 }
