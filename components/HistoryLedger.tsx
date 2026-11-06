@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, Clipboard, Dumbbell, ShieldAlert, Heart, Activity } from 'lucide-react';
 import { TrainingSession, MedicalRecord } from '@/types/athlete';
 import { supabase } from '../services/supabase';
