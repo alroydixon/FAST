@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { AthleteProfile, TrainingSession, WellnessEntry, StaffProfile, MedicalRecord, InjuryLog, TrackPerformanceRecord } from '../types/athlete';
+import { AthleteProfile, TrainingSession, WellnessEntry, StaffProfile, MedicalRecord, InjuryLog, TrackPerformanceRecord, TrackSplitRecord, BiomechanicalTestRecord, ReturnToPlayStepper } from '../types/athlete';
 
 export interface SupabaseSyncResult {
   success: boolean;
@@ -137,4 +137,25 @@ export async function fetchTrackPerformances(athleteId: string): Promise<TrackPe
   return (data || []).map((row: any) => ({
     id: row.id, athleteId: row.athlete_id, date: row.date, eventType: row.event_type, sessionType: row.session_type, timeSeconds: Number(row.time_seconds), velocityMs: row.velocity_ms, windReading: row.wind_reading, venueNotes: row.venue_notes
   }));
+}
+export async function fetchTrackSplitsData(athleteId: string): Promise<TrackSplitRecord[]> {
+  const { data } = await supabase.from('track_splits').select('*').eq('athlete_id', athleteId).order('date', { ascending: false });
+  return (data || []).map((row: any) => ({
+    id: row.id, athleteId: row.athlete_id, date: row.date, eventName: row.event_name, trialType: row.trial_type, timeSeconds: Number(row.time_seconds), windReading: row.wind_reading, reactionTime: row.reaction_time, fly10m: row.fly_10m, accel30m: row.accel_30m, dash60m: row.dash_60m, drivePhase030m: row.drive_phase_0_30m, maxVelocity3060m: row.max_velocity_30_60m, endurance60100m: row.endurance_60_100m, venue: row.venue, statusTag: row.status_tag
+  }));
+}
+
+export async function fetchBiomechanicalTests(athleteId: string): Promise<BiomechanicalTestRecord[]> {
+  const { data } = await supabase.from('biomechanical_tests').select('*').eq('athlete_id', athleteId).order('date', { ascending: false });
+  return (data || []).map((row: any) => ({
+    id: row.id, athleteId: row.athlete_id, date: row.date, testType: row.test_type, durationSeconds: row.duration_seconds, repsCompleted: row.reps_completed, bodyWeightKg: row.body_weight_kg, forceNewtons: row.force_newtons, powerWatts: row.power_watts, performanceTier: row.performance_tier
+  }));
+}
+
+export async function fetchRtpStepper(athleteId: string): Promise<ReturnToPlayStepper | null> {
+  const { data } = await supabase.from('medical_rtp_steps').select('*').eq('athlete_id', athleteId).maybeSingle();
+  if (!data) return null;
+  return {
+    id: data.id, athleteId: data.athlete_id, currentStage: data.current_stage, stageStatuses: [data.stage_1_status, data.stage_2_status, data.stage_3_status, data.stage_4_status, data.stage_5_status], clinicalNotes: data.clinical_notes
+  };
 }

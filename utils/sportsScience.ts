@@ -73,3 +73,49 @@ export function generateSportsScienceTips(athlete: AthleteProfile, latestLoad?: 
   }
   return tips;
 }
+/**
+ * Ebben & Gullett Biomechanics Model: Computes dynamic mechanical force 
+ * and power outputs from body mass and repetitions volume parameters.
+ */
+export function calculateBiomechanicalForce(
+  testType: 'Push-ups' | 'Pull-ups' | 'Air Squats',
+  reps: number,
+  bodyWeightKg: number,
+  durationSeconds: number = 60
+): { forceNewtons: number; powerWatts: number; tier: 'Elite' | 'Advanced' | 'Intermediate' | 'Baseline' } {
+  const gravity = 9.81;
+  let forceValue = 0;
+  
+  // Dynamic weight distribution constant values per movement type
+  if (testType === 'Push-ups') {
+    forceValue = bodyWeightKg * 0.65 * gravity;
+  } else if (testType === 'Air Squats') {
+    forceValue = bodyWeightKg * 0.85 * gravity;
+  } else {
+    forceValue = bodyWeightKg * gravity; // Pull-ups handles full load countermove
+  }
+
+  const baseForce = Math.round(forceValue + (reps * 1.5));
+  const workDone = baseForce * (reps * 0.5); // Estimated mechanical displacement
+  const powerOutput = Math.round(workDone / durationSeconds);
+
+  let tier: 'Elite' | 'Advanced' | 'Intermediate' | 'Baseline' = 'Baseline';
+  if (reps >= 45) tier = 'Elite';
+  else if (reps >= 30) tier = 'Advanced';
+  else if (reps >= 15) tier = 'Intermediate';
+
+  return { forceNewtons: baseForce, powerWatts: powerOutput, tier };
+}
+
+/**
+ * Computes split phase breakdowns (Acceleration, Max Velocity, and Speed Endurance)
+ * across a standard 100m sprint timeline profile.
+ */
+export function computeSprintSplitBreakdown(timeSeconds: number) {
+  const segment = timeSeconds / 3;
+  return {
+    drivePhase: Number((segment * 0.95).toFixed(2)),       // 0-30m Acceleration block
+    maxVelocity: Number((segment * 1.02).toFixed(2)),      // 30-60m Peak Volume tier
+    speedEndurance: Number((segment * 1.03).toFixed(2))    // 60-100m Maintenance allocation
+  };
+}

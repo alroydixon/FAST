@@ -35,6 +35,8 @@ import MedicalHub from './MedicalHub';
 import HistoryLedger from './HistoryLedger';
 import TeamAttendance from './TeamAttendance';
 import TrackPerformanceForm from './TrackPerformanceForm';
+import TrackSplitsView from './TrackSplitsView';
+import MedicalStepperView from './MedicalStepperView';
 
 const DEFAULT_ATHLETE: AthleteProfile = {
   id: 'ath-marcus-vance',
@@ -339,10 +341,14 @@ export default function MainDashboard() {
       )}
 
       {activeTab === 'track-metrics' && (
-        <div className="animate-fadeIn">
-          <TrackPerformanceForm athleteId={selectedRosterId || athlete.id} onRecordAdded={async () => { const data = await fetchTrackPerformances(selectedRosterId || athlete.id); setTrackRecords(data); }} />
-        </div>
-      )}
+  <div className="animate-fadeIn space-y-6">
+    <TrackPerformanceForm athleteId={selectedRosterId || athlete.id} onRecordAdded={async () => {
+      const data = await fetchTrackPerformances(selectedRosterId || athlete.id);
+      setTrackRecords(data);
+    }} />
+    <TrackSplitsView athleteId={selectedRosterId || athlete.id} />
+  </div>
+)}
 
       {activeTab === 'register' && (
         <div className="animate-fadeIn">
@@ -351,10 +357,11 @@ export default function MainDashboard() {
       )}
 
       {activeTab === 'medical' && (
-        <div className="animate-fadeIn">
-          <MedicalHub athleteId={selectedRosterId || athlete.id} clinicianId="med-staff-default" onRecordCommitted={() => setSyncStatus({ success: true, message: 'Clinical EMR entries committed successfully!' })} />
-        </div>
-      )}
+  <div className="animate-fadeIn space-y-6">
+    <MedicalHub athleteId={selectedRosterId || athlete.id} clinicianId="med-staff-default" onRecordCommitted={() => setSyncStatus({ success: true, message: 'Clinical EMR entries committed successfully!' })} />
+    <MedicalStepperView athleteId={selectedRosterId || athlete.id} />
+  </div>
+)}
 
       {activeTab === 'history' && (
         <div className="animate-fadeIn">

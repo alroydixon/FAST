@@ -165,3 +165,42 @@ export interface TrackPerformanceRecord {
   windReading?: number;
   venueNotes?: string;
 }
+export interface TrackSplitRecord {
+  id: string;
+  athleteId: string;
+  date: string;
+  eventName: string;
+  trialType: 'Competition' | 'Official Time Trial' | 'Training Simulation';
+  timeSeconds: number;
+  windReading?: string;
+  reactionTime?: number;
+  fly10m?: number;
+  accel30m?: number;
+  dash60m?: number;
+  drivePhase030m: number;
+  maxVelocity3060m: number;
+  endurance60100m: number;
+  venue: string;
+  statusTag: 'PB (Record)' | 'SB' | '-';
+}
+
+export interface BiomechanicalTestRecord {
+  id: string;
+  athleteId: string;
+  date: string;
+  testType: 'Push-ups' | 'Pull-ups' | 'Air Squats';
+  durationSeconds: number;
+  repsCompleted: number;
+  bodyWeightKg: number;
+  forceNewtons: number;
+  powerWatts: number;
+  performanceTier: 'Elite' | 'Advanced' | 'Intermediate' | 'Baseline';
+}
+
+export interface ReturnToPlayStepper {
+  id: string;
+  athleteId: string;
+  currentStage: number;
+  stageStatuses: string[]; // ['Cleared', 'Cleared', 'Active Block', 'Pending', 'Pending']
+  clinicalNotes: string;
+}
